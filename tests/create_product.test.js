@@ -4,9 +4,8 @@ const chrome = require('selenium-webdriver/chrome');
 const LOGIN_URL = 'http://localhost:3000/login';
 const DASHBOARD_URL = 'http://localhost:3000/dashboard';
 const URL_CREATE_PRODUCT = 'http://localhost:3000/products/create';
-const PRODUCTS_URL = 'http://localhost:3000/products'; // URL trang danh sách sản phẩm
+const PRODUCTS_URL = 'http://localhost:3000/products'; 
 
-// Thông tin đăng nhập - Cần thay thế bằng thông tin hợp lệ của bạn
 const LOGIN_USERNAME = 'user1@pos.vn'; 
 const LOGIN_PASSWORD = '123456';
 
@@ -16,7 +15,7 @@ async function doLogin(driver, username, password) {
   await driver.findElement(By.id('username')).sendKeys(username);
   await driver.findElement(By.id('password')).sendKeys(password);
   await driver.findElement(By.css('button[type="submit"]')).click();
-  await driver.wait(until.urlIs(DASHBOARD_URL), 10000); // Chờ chuyển hướng đến dashboard
+  await driver.wait(until.urlIs(DASHBOARD_URL), 5000);
   console.log('Đăng nhập thành công!');
 }
 
@@ -48,15 +47,12 @@ async function runTest() {
             throw e;
         }
     }
-    console.log('Đang chờ nội dung trang Tạo Sản Phẩm (ví dụ: input Tên Sản Phẩm)...');
     try {
-      // Chờ một element cụ thể của form tạo sản phẩm
       await driver.wait(until.elementLocated(By.css('input[name="name"]')), 15000); // Tăng thời gian chờ
-      console.log('Nội dung trang Tạo Sản Phẩm (input Tên Sản Phẩm) đã tải.');
     } catch (e) {
       const currentUrlAtError = await driver.getCurrentUrl();
       console.error(`Không thể tìm thấy input Tên Sản Phẩm. URL hiện tại khi lỗi: ${currentUrlAtError}. Error: ${e.message}`);
-      throw e; // Ném lại lỗi để dừng test
+      throw e; 
     }
     
     // Clear and fill form fields
@@ -72,7 +68,6 @@ async function runTest() {
     await priceInput.clear();
     if (productData.price !== undefined) await priceInput.sendKeys(String(productData.price));
 
-    // Danh mục (MUI Select)
     if (productData.category_id !== undefined) {
       const selectTrigger = await driver.findElement(By.id('category_id'));
       await selectTrigger.click();
@@ -81,8 +76,6 @@ async function runTest() {
       await option.click();
       await driver.sleep(300); // Chờ dropdown đóng
     } else {
-        // Nếu category_id không được cung cấp và cần clear, ta phải mở và chọn một option trống nếu có, hoặc click ra ngoài
-        // Tạm thời bỏ qua việc clear select nếu không có giá trị mới
     }
 
     const imageInput = await driver.findElement(By.css('input[name="image"]'));
@@ -93,13 +86,10 @@ async function runTest() {
     await descInput.clear();
     if (productData.description !== undefined) await descInput.sendKeys(productData.description);
 
-    // Đang bán (Switch)
     if (productData.is_available !== undefined) {
       const toggle = await driver.findElement(By.css('input[name="is_available"]'));
-      // Thay vào đó, lấy giá trị aria-checked
-      const currentCheckedState = await toggle.getAttribute('aria-checked') === 'true';
-      if (productData.is_available !== currentCheckedState) {
-        // Click vào span cha của input để toggle MUI Switch
+      const isChecked = await toggle.isSelected();
+      if (productData.is_available !== isChecked) {
         await driver.findElement(By.xpath(`//input[@name='is_available']/parent::span`)).click();
       }
     }
@@ -174,7 +164,7 @@ async function runTest() {
     }, true);
     await submitForm();
     let err = await getValidationText('name');
-    if (err === 'Vui lòng nhập tên sản phẩm') console.log('PASS - Tên sản phẩm để trống');
+    if (err === 'Vui lòng nhập tên sản phẩm') console.log('✅ Tên sản phẩm để trống');
     else console.log('FAIL - Tên sản phẩm để trống:', err);
     await driver.sleep(500);
 
@@ -188,7 +178,7 @@ async function runTest() {
     }, true);
     await submitForm();
     err = await getValidationText('sku');
-    if (err === 'Vui lòng nhập mã SKU') console.log('PASS - SKU để trống');
+    if (err === 'Vui lòng nhập mã SKU') console.log('✅ SKU để trống');
     else console.log('FAIL - SKU để trống:', err);
     await driver.sleep(500);
 
@@ -202,25 +192,16 @@ async function runTest() {
     }, true);
     await submitForm();
     err = await getValidationText('price');
-    if (err === 'Giá phải lớn hơn 0') console.log('PASS - Giá <= 0');
+    if (err === 'Giá phải lớn hơn 0') console.log('✅ Giá <= 0');
     else console.log('FAIL - Giá <= 0:', err);
     await driver.sleep(500);
-
-    // Danh mục để trống (nếu có thể test)
-    // Nếu không thể clear select, có thể bỏ qua đoạn này
-    // await fillProductForm({ name: 'Sản phẩm Test', sku: `SKU_VALIDATE_CAT_${Date.now()}`, price: 1000, category_id: undefined, is_available: true }, true);
-    // await submitForm();
-    // err = await getValidationText('category_id');
-    // if (err === 'Vui lòng chọn danh mục') console.log('PASS - Danh mục để trống');
-    // else console.log('FAIL - Danh mục để trống:', err);
-    // await driver.sleep(500);
 
     // 2. SKU trùng lặp
     console.log('\nTest 2: SKU trùng lặp');
     const duplicateSku = `SKU_DUPLICATE_${Date.now()}`;
     // Tạo sản phẩm đầu tiên
     await fillProductForm({
-      name: 'Sản phẩm Trùng SKU',
+      name: 'Sản phầm Tạo thành công - SKU Test trùng',
       sku: duplicateSku,
       price: 1000,
       category_id: 1,
@@ -229,14 +210,14 @@ async function runTest() {
     await submitForm();
     let msg = await getSnackbarMessage();
     if (msg && msg.includes('Tạo sản phẩm thành công')) {
-      console.log('PASS - Tạo sản phẩm đầu tiên với SKU mới');
+      console.log('✅ Tạo sản phẩm đầu tiên với SKU mới');
     } else {
       console.log('FAIL - Không tạo được sản phẩm đầu tiên:', msg);
     }
     await driver.sleep(1000);
     // Tạo lại với SKU trùng
     await fillProductForm({
-      name: 'Sản phẩm Trùng SKU 2',
+      name: 'Sản phầm Tạo thất bại - SKU Test trùng',
       sku: duplicateSku,
       price: 2000,
       category_id: 1,
@@ -245,7 +226,7 @@ async function runTest() {
     await submitForm();
     msg = await getSnackbarMessage();
     if (msg && (msg.toLowerCase().includes('sku đã tồn tại') || msg.toLowerCase().includes('product with sku'))) {
-      console.log('PASS - Báo lỗi SKU trùng');
+      console.log('✅ Báo lỗi SKU trùng');
     } else {
       console.log('FAIL - Không báo lỗi SKU trùng:', msg);
     }
@@ -267,7 +248,7 @@ async function runTest() {
     await submitForm();
     msg = await getSnackbarMessage();
     if (msg && msg.includes('Tạo sản phẩm thành công')) {
-      console.log('PASS - Tạo sản phẩm thành công');
+      console.log('✅ Tạo sản phẩm thành công');
     } else {
       console.log('FAIL - Không tạo được sản phẩm:', msg);
     }
@@ -279,7 +260,20 @@ async function runTest() {
       const row = await driver.wait(until.elementLocated(By.xpath(`//td[contains(text(),'${successSku}')]`)), 5000);
       const rowText = await row.getText();
       if (rowText.includes(successSku)) {
-        console.log('PASS - Sản phẩm mới xuất hiện trong danh sách');
+        console.log('✅ Sản phẩm mới xuất hiện trong danh sách');
+        // Kiểm tra trạng thái Đang bán (cell thứ 7 trong cùng hàng)
+        try {
+          // Lấy cell trạng thái (td thứ 7, index bắt đầu từ 1)
+          const statusCell = await row.findElement(By.xpath('following-sibling::td[4]'));
+          const statusText = await statusCell.getText();
+          if (statusText.includes('Đang bán')) {
+            console.log('✅ Trạng thái mặc định là Đang bán');
+          } else {
+            console.log('FAIL - Trạng thái không phải Đang bán:', statusText);
+          }
+        } catch (e) {
+          console.log('FAIL - Không tìm thấy cột trạng thái Đang bán:', e.message);
+        }
       } else {
         console.log('FAIL - Không tìm thấy sản phẩm mới trong danh sách');
       }
