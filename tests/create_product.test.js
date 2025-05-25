@@ -198,14 +198,16 @@ async function runTest() {
 
     // 2. SKU trùng lặp
     console.log('\nTest 2: SKU trùng lặp');
-    const duplicateSku = `SKU_DUPLICATE_${Date.now()}`;
+    const duplicateSku = `SKU_TEST_DUPLICATE_${Date.now()}`;
     // Tạo sản phẩm đầu tiên
     await fillProductForm({
       name: 'Sản phầm Tạo thành công - SKU Test trùng',
       sku: duplicateSku,
       price: 1000,
       category_id: 1,
-      is_available: true
+      is_available: true,
+      image: 'https://product.hstatic.net/1000075078/product/1737357048_uong-den-sua-da_5876b3829fe94af788996ca234a7894f.png',
+  
     }, true);
     await submitForm();
     let msg = await getSnackbarMessage();
@@ -241,7 +243,7 @@ async function runTest() {
       sku: successSku,
       price: 12345,
       category_id: 1,
-      image: 'https://example.com/image.jpg',
+      image: 'https://product.hstatic.net/1000075078/product/1737357048_uong-den-sua-da_5876b3829fe94af788996ca234a7894f.png',
       description: 'Mô tả sản phẩm test thành công',
       is_available: true,
     }, true);
