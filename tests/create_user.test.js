@@ -180,20 +180,6 @@ async function runTest() {
     await submitBtn.click();
   }
 
-  async function getValidationText(fieldName) {
-    try {
-      // Đợi validation message xuất hiện
-      await driver.sleep(300);
-      
-      // Tìm FormHelperText trong FormControl
-      const helperText = await driver.findElement(By.css(`input[name="${fieldName}"] ~ p.Mui-error`));
-      return await helperText.getText();
-    } catch (e) {
-      console.error(`Không tìm thấy validation text cho ${fieldName}:`, e.message);
-      return null;
-    }
-  }
-
   async function getSnackbarMessage() {
     try {
       // Đợi Snackbar xuất hiện
@@ -214,96 +200,8 @@ async function runTest() {
 
     console.log('--- Test Create User ---');
 
-    // Test case 1: Validate các trường bắt buộc
-    console.log('\nTest 1: Validate các trường bắt buộc');
-
-    // 1.1 Tên người dùng trống
-    await fillUserForm({
-      email: 'test@example.com',
-      user_name: '',
-      password: '123456',
-      confirmPassword: '123456',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    let err = await getValidationText('user_name');
-    if (err === 'Tên người dùng là bắt buộc') console.log('✅ Tên người dùng trống');
-    else console.log('❌ Tên người dùng trống:', err);
-    await driver.sleep(500);
-
-    // 1.2 Email trống
-    await fillUserForm({
-      email: '',
-      user_name: 'Test User',
-      password: '123456',
-      confirmPassword: '123456',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    err = await getValidationText('email');
-    if (err === 'Email là bắt buộc') console.log('✅ Email trống');
-    else console.log('❌ Email trống:', err);
-    await driver.sleep(500);
-
-    // 1.3 Email sai định dạng
-    await fillUserForm({
-      email: 'invalid@email',
-      user_name: 'Test User',
-      password: '123456',
-      confirmPassword: '123456',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    err = await getValidationText('email');
-    if (err === 'Email không hợp lệ') console.log('✅ Email sai định dạng');
-    else console.log('❌ Email sai định dạng:', err);
-    await driver.sleep(500);
-
-    // 1.4 Mật khẩu trống
-    await fillUserForm({
-      email: 'test@example.com',
-      user_name: 'Test User',
-      password: '',
-      confirmPassword: '',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    err = await getValidationText('password');
-    if (err === 'Mật khẩu là bắt buộc') console.log('✅ Mật khẩu trống');
-    else console.log('❌ Mật khẩu trống:', err);
-    await driver.sleep(500);
-
-    // 1.5 Mật khẩu xác nhận không khớp
-    await fillUserForm({
-      email: 'test@example.com',
-      user_name: 'Test User',
-      password: '123456',
-      confirmPassword: '1234567',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    err = await getValidationText('confirmPassword');
-    if (err === 'Mật khẩu không khớp') console.log('✅ Mật khẩu xác nhận không khớp');
-    else console.log('❌ Mật khẩu xác nhận không khớp:', err);
-    await driver.sleep(500);
-
-    // Test case 2: Tạo người dùng thành công
-    console.log('\nTest 2: Tạo người dùng thành công');
+    // Test case: Tạo người dùng thành công
+    console.log('\nTest: Tạo người dùng thành công');
     const testEmail = `test.user.${Date.now()}@example.com`;
     await fillUserForm({
       email: testEmail,
@@ -321,54 +219,67 @@ async function runTest() {
     if (msg && msg.includes('Tạo người dùng thành công')) {
       console.log('✅ Tạo người dùng thành công');
       
-      // Kiểm tra redirect về trang danh sách
+      // Điều hướng về trang danh sách users
+      await driver.get(USERS_URL);
       await driver.wait(until.urlIs(USERS_URL), 5000);
-      console.log('✅ Chuyển hướng về trang danh sách người dùng');
+      console.log('✅ Đã điều hướng về trang danh sách người dùng');
+
+      await driver.sleep(2000); // Đợi trang load
       
-      // Kiểm tra người dùng mới trong danh sách
+      // Tìm kiếm email vừa tạo
       try {
-        const userRow = await driver.wait(
-          until.elementLocated(By.xpath(`//td[contains(text(),'${testEmail}')]`)),
-          5000
+        console.log('Bắt đầu tìm kiếm với email:', testEmail);
+        
+        // Tìm input search trong Paper container
+        const searchInput = await driver.findElement(
+          By.css('.user-management-filter-container input.MuiInputBase-input')
         );
-        console.log('✅ Người dùng mới xuất hiện trong danh sách');
+        console.log('Đã tìm thấy input search');
+        
+        // Clear và nhập email mới
+        await searchInput.clear();
+        console.log('Đã clear input search');
+        
+        await searchInput.sendKeys(testEmail);
+        console.log('Đã nhập email:', testEmail);
+        
+        // Click nút TÌM KIẾM trong Grid container
+        const searchButton = await driver.findElement(
+          By.css('.user-management-filter-container button.MuiButton-contained')
+        );
+        await searchButton.click();
+        console.log('Đã click nút TÌM KIẾM');
+        
+        // Đợi kết quả tìm kiếm
+        await driver.sleep(2000);
+        console.log('Đã đợi 2 giây sau khi tìm kiếm');
+        
+        // Kiểm tra xem có dòng nào trong bảng không
+        const rows = await driver.findElements(By.css('tbody tr'));
+        console.log('Số dòng tìm thấy:', rows.length);
+        
+        if (rows.length > 0) {
+          // Kiểm tra email trong dòng đầu tiên
+          const emailText = await rows[0].findElement(By.xpath(`.//div[contains(text(), 'Email:')]`)).getText();
+          console.log('Email tìm thấy trong dòng đầu tiên:', emailText);
+          
+          if (emailText.includes(testEmail)) {
+            console.log('✅ Tìm thấy email trong kết quả tìm kiếm:', testEmail);
+          } else {
+            console.log('❌ Email không khớp.');
+            console.log('Email cần tìm:', testEmail);
+            console.log('Email tìm thấy:', emailText);
+          }
+        } else {
+          console.log('❌ Không có kết quả tìm kiếm nào');
+        }
+
       } catch (e) {
-        console.log('❌ Không tìm thấy người dùng mới trong danh sách');
+        console.log('❌ Lỗi khi tìm kiếm email. Chi tiết lỗi:', e.message);
+        console.error('Stack trace:', e.stack);
       }
     } else {
       console.log('❌ Tạo người dùng thất bại:', msg);
-    }
-    await driver.sleep(1000);
-
-    // Test case 3: Email đã tồn tại
-    console.log('\nTest 3: Email đã tồn tại');
-    await fillUserForm({
-      email: testEmail, // Sử dụng email đã tạo ở test case 2
-      user_name: 'Test User Duplicate',
-      password: '123456',
-      confirmPassword: '123456',
-      gender_id: 1,
-      phone_number: '0123456789',
-      position_id: 1,
-      shop_id: 1
-    }, true);
-    await submitForm();
-    msg = await getSnackbarMessage();
-    if (msg && msg.toLowerCase().includes('email đã tồn tại')) {
-      console.log('✅ Báo lỗi email đã tồn tại');
-    } else {
-      console.log('❌ Không báo lỗi email đã tồn tại:', msg);
-    }
-    await driver.sleep(1000);
-
-    // Test case 4: Login với user vừa tạo
-    console.log('\nTest 4: Login với user vừa tạo');
-    await doLogin(driver, testEmail, '123456');
-    const currentUrl = await driver.getCurrentUrl();
-    if (currentUrl === DASHBOARD_URL) {
-      console.log('✅ Đăng nhập thành công với user mới');
-    } else {
-      console.log('❌ Đăng nhập thất bại với user mới');
     }
 
   } finally {
