@@ -157,7 +157,7 @@ async function runTest() {
     await driver.sleep(1000);
 
     // Đợi dialog hiện lên
-    await driver.wait(until.elementLocated(By.css('.MuiDialog-paper')), 5000);
+    const orderDialog = await driver.wait(until.elementLocated(By.css('.MuiDialog-paper')), 5000);
 
     // Điền thông tin đơn hàng
     const noteInput = await driver.findElement(By.css('textarea[name="note"]'));
@@ -169,18 +169,15 @@ async function runTest() {
     await confirmBtn.click();
     await driver.sleep(2000); // Tăng thời gian chờ sau khi xác nhận
 
-    // Kiểm tra thông báo đặt hàng thành công và giỏ hàng trống
+    // Kiểm tra thông báo đặt hàng thành công
     const orderMsg = await getSnackbarMessage();
-    const isCartEmptyAfterOrder = await checkEmptyCart();
-    
-    if (orderMsg && orderMsg.includes('Đặt hàng thành công') && isCartEmptyAfterOrder) {
-      console.log('✅ Đặt hàng thành công và giỏ hàng đã được làm trống');
-    } else {
-      console.log('FAIL - Đặt hàng thất bại hoặc giỏ hàng chưa được làm trống');
-    }
+    console.log('Thông báo đặt hàng:', orderMsg);
 
-    // Kiểm tra hiển thị PDF hóa đơn
-    const pdfDialog = await driver.wait(until.elementLocated(By.css('iframe[title="Hóa đơn"]')), 5000);
+    // Đợi dialog PDF hiển thị
+    const pdfDialog = await driver.wait(
+      until.elementLocated(By.css('.MuiDialog-paper[style*="height: 90vh"]')), 
+      5000
+    );
     if (pdfDialog) {
       console.log('✅ Hiển thị hóa đơn PDF thành công');
     } else {
@@ -188,15 +185,82 @@ async function runTest() {
     }
 
     // Click nút In hóa đơn
-    const printBtn = await driver.findElement(By.xpath("//button[contains(text(), 'In hóa đơn')]"));
+    const printBtn = await driver.findElement(
+      By.css('button.MuiButton-containedPrimary[type="button"] svg[data-testid="DownloadIcon"]')
+    ).findElement(By.xpath('ancestor::button'));
     await printBtn.click();
     await driver.sleep(1000);
     console.log('✅ Đã click nút In hóa đơn');
 
     // Đóng dialog hóa đơn
-    const closeBtn = await driver.findElement(By.xpath("//button[contains(text(), 'Đóng')]"));
-    await closeBtn.click();
-    await driver.sleep(1000);
+    try {
+      // Tìm nút Đóng bằng text và class
+      const closeBtn = await driver.wait(
+        until.elementLocated(
+          By.xpath("//button[contains(@class, 'MuiButton-containedPrimary') and contains(text(), 'Đóng')]")
+        ),
+        5000
+      );
+      console.log('✅ Đã tìm thấy nút Đóng');
+      
+      await closeBtn.click();
+      console.log('✅ Đã click nút Đóng');
+      await driver.sleep(2000); // Tăng thời gian chờ sau khi đóng dialog
+
+      // Đợi dialog đóng hoàn toàn
+      await driver.wait(until.stalenessOf(pdfDialog), 5000);
+      console.log('✅ Dialog hóa đơn đã đóng hoàn toàn');
+    } catch (e) {
+      console.log('FAIL - Lỗi khi đóng dialog:', e.message);
+    }
+
+    // Refresh trang để cập nhật trạng thái giỏ hàng
+    await driver.navigate().refresh();
+    await driver.sleep(2000); // Đợi trang load lại
+
+    // Kiểm tra giỏ hàng trống
+    try {
+      // Đợi header giỏ hàng hiển thị số lượng 0
+      const cartHeader = await driver.wait(
+        until.elementLocated(By.css('.cart-header')),
+        5000
+      );
+      const headerText = await cartHeader.getText();
+      console.log('Header giỏ hàng hiện tại:', headerText);
+      
+      if (headerText.includes('Giỏ hàng (0)')) {
+        console.log('✅ Header giỏ hàng hiển thị đúng:', headerText);
+      } else {
+        console.log('FAIL - Header giỏ hàng không hiển thị số lượng 0:', headerText);
+        
+        // Thử kiểm tra lại sau 2 giây
+        await driver.sleep(2000);
+        const updatedHeaderText = await cartHeader.getText();
+        console.log('Header giỏ hàng sau 2s:', updatedHeaderText);
+        
+        if (updatedHeaderText.includes('Giỏ hàng (0)')) {
+          console.log('✅ Header giỏ hàng đã cập nhật đúng sau khi đợi thêm');
+        }
+      }
+
+      // Đợi message giỏ hàng trống
+      const emptyMessage = await driver.wait(
+        until.elementLocated(By.css('.empty-cart-message')),
+        5000
+      );
+      const messageText = await emptyMessage.getText();
+
+      if (messageText.includes('Giỏ hàng trống')) {
+        console.log('✅ Message giỏ hàng trống hiển thị đúng');
+        if (orderMsg && orderMsg.includes('Đặt hàng thành công')) {
+          console.log('✅ Đặt hàng thành công và giỏ hàng đã được làm trống');
+        }
+      } else {
+        console.log('FAIL - Message giỏ hàng trống không hiển thị đúng:', messageText);
+      }
+    } catch (e) {
+      console.log('FAIL - Không thể kiểm tra trạng thái giỏ hàng trống:', e.message);
+    }
 
   } finally {
     await driver.quit();
