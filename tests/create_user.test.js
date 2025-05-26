@@ -71,12 +71,15 @@ async function runTest() {
 
       if (userData.gender_id !== undefined) {
         // Click vào MUI Select để mở dropdown
-        const genderSelect = await driver.findElement(By.css('#gender-label'));
+        const genderSelect = await driver.findElement(By.css('[data-testid="gender-select"]'));
         await genderSelect.click();
         await driver.sleep(500);
         
-        // Chọn option từ MUI Menu (sử dụng data-value)
-        const option = await driver.findElement(By.css(`[data-value="${userData.gender_id}"]`));
+        // Chọn option từ MUI Menu
+        const option = await driver.wait(
+          until.elementLocated(By.css(`li[data-value="${userData.gender_id}"]`)),
+          5000
+        );
         await option.click();
         await driver.sleep(300);
       }
@@ -89,39 +92,78 @@ async function runTest() {
 
       if (userData.position_id !== undefined) {
         // Click vào MUI Select để mở dropdown
-        const positionSelect = await driver.findElement(By.css('#position-label'));
+        const positionSelect = await driver.findElement(By.css('#position_id'));
         await positionSelect.click();
         await driver.sleep(500);
         
         // Chọn option từ MUI Menu
-        const option = await driver.findElement(By.css(`[data-value="${userData.position_id}"]`));
+        const option = await driver.wait(
+          until.elementLocated(By.css(`li[data-value="${userData.position_id}"]`)),
+          5000
+        );
         await option.click();
         await driver.sleep(300);
       }
 
       if (userData.shop_id !== undefined) {
         // Click vào MUI Select để mở dropdown
-        const shopSelect = await driver.findElement(By.css('#shop-label'));
+        const shopSelect = await driver.findElement(By.css('#shop_id'));
         await shopSelect.click();
         await driver.sleep(500);
         
         // Chọn option từ MUI Menu
-        const option = await driver.findElement(By.css(`[data-value="${userData.shop_id}"]`));
+        const option = await driver.wait(
+          until.elementLocated(By.css(`li[data-value="${userData.shop_id}"]`)),
+          5000
+        );
         await option.click();
         await driver.sleep(300);
       }
 
       // Chọn quyền nếu có
       if (userData.permissions && userData.permissions.length > 0) {
+        // Đợi cho phần quyền load
+        await driver.wait(until.elementLocated(By.css('.permission-module')), 5000);
+        
+        const permissionMap = {
+          'user-view': 'Xem',
+          'user-create': 'Tạo mới',
+          'user-update': 'Cập nhật',
+          'user-delete': 'Xóa',
+          'product-view': 'Xem',
+          'product-create': 'Tạo mới',
+          'product-update': 'Cập nhật',
+          'product-delete': 'Xóa',
+          'order-view': 'Xem',
+          'order-create': 'Tạo mới',
+          'order-update': 'Cập nhật',
+          'order-delete': 'Xóa',
+          'order-approve': 'Duyệt',
+          'report-daily-view': 'Daily-view',
+          'report-monthly-view': 'Monthly-view',
+          'report-export': 'Xuất',
+          'permission-manage': 'Quản lý'
+        };
+
         for (const permission of userData.permissions) {
-          // Tìm checkbox trong FormControlLabel
-          const checkbox = await driver.findElement(By.css(`input[value="${permission}"]`));
-          const isChecked = await checkbox.isSelected();
-          if (!isChecked) {
-            // Click vào label thay vì checkbox trực tiếp
-            const label = await driver.findElement(By.xpath(`//label[contains(., '${permission}')]`));
+          try {
+            // Tìm module chứa quyền
+            const permissionText = permissionMap[permission];
+            if (!permissionText) {
+              console.warn(`Không tìm thấy text mapping cho quyền: ${permission}`);
+              continue;
+            }
+
+            // Tìm và click vào label của checkbox
+            const label = await driver.findElement(
+              By.xpath(`//span[contains(@class, 'MuiFormControlLabel-label') and contains(text(), '${permissionText}')]`)
+            );
+            await driver.executeScript("arguments[0].scrollIntoView(true);", label);
+            await driver.sleep(200);
             await label.click();
             await driver.sleep(200);
+          } catch (error) {
+            console.error(`Lỗi khi chọn quyền ${permission}:`, error.message);
           }
         }
       }
@@ -133,8 +175,8 @@ async function runTest() {
   }
 
   async function submitForm() {
-    // Tìm nút submit bằng icon và text
-    const submitBtn = await driver.findElement(By.xpath("//button[contains(., 'LƯU')]"));
+    // Tìm nút submit bằng text
+    const submitBtn = await driver.findElement(By.xpath("//button[contains(text(), 'LƯU')]"));
     await submitBtn.click();
   }
 
