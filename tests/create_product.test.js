@@ -201,7 +201,7 @@ async function runTest() {
     const duplicateSku = `SKU_TEST_DUPLICATE_${Date.now()}`;
     // Tạo sản phẩm đầu tiên
     await fillProductForm({
-      name: 'Sản phầm Tạo thành công - SKU Test trùng',
+      name: 'SP Tạo thành công - SKU Test trùng',
       sku: duplicateSku,
       price: 1000,
       category_id: 1,
@@ -219,7 +219,7 @@ async function runTest() {
     await driver.sleep(1000);
     // Tạo lại với SKU trùng
     await fillProductForm({
-      name: 'Sản phầm Tạo thất bại - SKU Test trùng',
+      name: 'SP Tạo thất bại - SKU Test trùng',
       sku: duplicateSku,
       price: 2000,
       category_id: 1,
@@ -237,7 +237,7 @@ async function runTest() {
     // 3. Tạo sản phẩm thành công và kiểm tra lại trên trang quản lý sản phẩm
     console.log('\nTest 3: Tạo sản phẩm thành công và kiểm tra lại trên trang quản lý sản phẩm');
     const successSku = `SKU_SUCCESS_${Date.now()}`;
-    const productName = `Sản phẩm Thành Công ${Date.now()}`;
+    const productName = `SP Thành Công ${Date.now()}`;
     await fillProductForm({
       name: productName,
       sku: successSku,
