@@ -1,38 +1,35 @@
 # Test cases cho chức năng Đặt hàng
 
 ## 1. Thêm sản phẩm vào giỏ hàng
-- Mở trang đặt hàng (http://localhost:3000/orders/create)
-- Click vào sản phẩm → sản phẩm được thêm vào giỏ hàng
-- Kiểm tra giỏ hàng hiển thị sản phẩm với đúng:
-  + Tên sản phẩm
-  + Giá
+- Click vào sản phẩm
+- Kỳ vọng: 
+  + Sản phẩm được thêm vào giỏ hàng
+  + Hiển thị đúng tên sản phẩm
   + Số lượng mặc định là 1
 
-## 2. Thay đổi số lượng sản phẩm trong giỏ
-- Nhấn nút + để tăng số lượng → số lượng tăng lên 2
-- Nhấn nút - để giảm số lượng → số lượng giảm về 1
-- Kiểm tra số lượng được cập nhật đúng sau mỗi thao tác
+## 2. Thay đổi số lượng sản phẩm
+- Click nút + để tăng số lượng
+- Kỳ vọng: Số lượng tăng lên 2
+- Click nút - để giảm số lượng  
+- Kỳ vọng: Số lượng giảm về 1
 
-## 3. Xóa sản phẩm khỏi giỏ hàng
-- Thêm sản phẩm vào giỏ hàng
-- Nhấn nút xóa (thùng rác) để bỏ sản phẩm khỏi giỏ hàng
-- Kiểm tra giỏ hàng trống với:
-  + Header hiển thị "Giỏ hàng (0)"
-  + Message "Giỏ hàng trống"
-  + Message "Vui lòng chọn sản phẩm để thêm vào giỏ hàng"
+## 3. Xóa sản phẩm khỏi giỏ
+- Click nút xóa (icon thùng rác)
+- Kỳ vọng:
+  + Sản phẩm bị xóa khỏi giỏ
+  + Hiển thị "Giỏ hàng (0)"
+  + Hiển thị "Giỏ hàng trống"
 
 ## 4. Đặt hàng thành công
-- Thêm sản phẩm vào giỏ hàng
-- Nhấn nút "THANH TOÁN"
-- Hiển thị popup xác nhận đơn hàng
+- Click "Thanh toán"
 - Điền ghi chú đơn hàng
-- Nhấn "XÁC NHẬN"
-- Kiểm tra:
-  + Hiển thị thông báo "Đặt hàng thành công!"
+- Click "Xác nhận"
+- Kỳ vọng:
+  + Hiển thị "Đặt hàng thành công"
+  + Hiển thị hóa đơn PDF
+  + Click được nút "In hóa đơn"
+  + Click được nút "Đóng"
   + Giỏ hàng trở về trạng thái trống
-  + Hiển thị popup hóa đơn PDF
-  + Có thể click nút "In hóa đơn"
-  + Có thể đóng popup hóa đơn
 
 ## 5. Kiểm tra phương thức thanh toán
 - Thay đổi phương thức → cập nhật giá trị đơn hàng nếu có thay đổi.
