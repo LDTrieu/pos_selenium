@@ -37,11 +37,12 @@ async function runTest() {
       console.log(`Điều hướng đến trang tạo người dùng: ${URL_CREATE_USER}`);
       await driver.get(URL_CREATE_USER);
       await driver.wait(until.urlIs(URL_CREATE_USER), 10000);
+      await driver.sleep(1000); // Đợi form load hoàn toàn
     }
 
     try {
       // Đợi form load
-      await driver.wait(until.elementLocated(By.css('input[name="user_name"]')), 10000);
+      await driver.wait(until.elementLocated(By.css('form')), 10000);
 
       // Điền thông tin người dùng
       if (userData.user_name !== undefined) {
@@ -69,11 +70,15 @@ async function runTest() {
       }
 
       if (userData.gender_id !== undefined) {
-        const genderSelect = await driver.findElement(By.css('select[name="gender_id"]'));
+        // Click vào MUI Select để mở dropdown
+        const genderSelect = await driver.findElement(By.css('#gender-label'));
         await genderSelect.click();
         await driver.sleep(500);
-        const option = await driver.findElement(By.css(`option[value="${userData.gender_id}"]`));
+        
+        // Chọn option từ MUI Menu (sử dụng data-value)
+        const option = await driver.findElement(By.css(`[data-value="${userData.gender_id}"]`));
         await option.click();
+        await driver.sleep(300);
       }
 
       if (userData.phone_number !== undefined) {
@@ -83,27 +88,41 @@ async function runTest() {
       }
 
       if (userData.position_id !== undefined) {
-        const positionSelect = await driver.findElement(By.css('select[name="position_id"]'));
+        // Click vào MUI Select để mở dropdown
+        const positionSelect = await driver.findElement(By.css('#position-label'));
         await positionSelect.click();
         await driver.sleep(500);
-        const option = await driver.findElement(By.css(`option[value="${userData.position_id}"]`));
+        
+        // Chọn option từ MUI Menu
+        const option = await driver.findElement(By.css(`[data-value="${userData.position_id}"]`));
         await option.click();
+        await driver.sleep(300);
       }
 
       if (userData.shop_id !== undefined) {
-        const shopSelect = await driver.findElement(By.css('select[name="shop_id"]'));
+        // Click vào MUI Select để mở dropdown
+        const shopSelect = await driver.findElement(By.css('#shop-label'));
         await shopSelect.click();
         await driver.sleep(500);
-        const option = await driver.findElement(By.css(`option[value="${userData.shop_id}"]`));
+        
+        // Chọn option từ MUI Menu
+        const option = await driver.findElement(By.css(`[data-value="${userData.shop_id}"]`));
         await option.click();
+        await driver.sleep(300);
       }
 
       // Chọn quyền nếu có
       if (userData.permissions && userData.permissions.length > 0) {
         for (const permission of userData.permissions) {
+          // Tìm checkbox trong FormControlLabel
           const checkbox = await driver.findElement(By.css(`input[value="${permission}"]`));
-          await checkbox.click();
-          await driver.sleep(200);
+          const isChecked = await checkbox.isSelected();
+          if (!isChecked) {
+            // Click vào label thay vì checkbox trực tiếp
+            const label = await driver.findElement(By.xpath(`//label[contains(., '${permission}')]`));
+            await label.click();
+            await driver.sleep(200);
+          }
         }
       }
 
@@ -114,22 +133,19 @@ async function runTest() {
   }
 
   async function submitForm() {
-    const submitBtn = await driver.findElement(By.css('button[type="submit"]'));
+    // Tìm nút submit bằng icon và text
+    const submitBtn = await driver.findElement(By.xpath("//button[contains(., 'LƯU')]"));
     await submitBtn.click();
   }
 
   async function getValidationText(fieldName) {
     try {
-      const input = await driver.findElement(By.css(`input[name="${fieldName}"]`));
-      const describedBy = await input.getAttribute('aria-describedby');
-      if (describedBy) {
-        const errorEl = await driver.findElement(By.id(describedBy));
-        const classAttribute = await errorEl.getAttribute('class');
-        if (classAttribute.includes('Mui-error')) {
-          return await errorEl.getText();
-        }
-      }
-      return null;
+      // Đợi validation message xuất hiện
+      await driver.sleep(300);
+      
+      // Tìm FormHelperText trong FormControl
+      const helperText = await driver.findElement(By.css(`input[name="${fieldName}"] ~ p.Mui-error`));
+      return await helperText.getText();
     } catch (e) {
       console.error(`Không tìm thấy validation text cho ${fieldName}:`, e.message);
       return null;
@@ -138,8 +154,9 @@ async function runTest() {
 
   async function getSnackbarMessage() {
     try {
+      // Đợi Snackbar xuất hiện
       const snackbarAlert = await driver.wait(
-        until.elementLocated(By.css('div[role="alert"].MuiAlert-filled')),
+        until.elementLocated(By.css('.MuiAlert-root')),
         5000
       );
       return await snackbarAlert.getText();
